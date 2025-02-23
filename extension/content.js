@@ -32,7 +32,7 @@ async function scrapeAndDetect() {
     let requestBody = { tokens: chunks.map(c => c.text) };
 
     try {
-        let response = await fetch("http://127.0.0.1:8000/", {
+        let response = await fetch("https://027c-2409-40e0-102a-ac59-650d-5c1d-f412-4653.ngrok-free.app/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(requestBody)
