@@ -28,7 +28,7 @@ app.add_middleware(
 )
 
 class Data(BaseModel):
-    tokens: list[str]  # Expecting a list of pattern strings
+    tokens: list[str]  # Expecting a list of text chunks
 
 @app.post("/")
 async def classify_patterns(data: Data):
@@ -39,15 +39,22 @@ async def classify_patterns(data: Data):
     # Predict
     predictions = nn_model.predict(padded_sequences)  # Softmax output
 
-    # Convert predictions to class labels
-    predicted_classes = np.argmax(predictions, axis=1)  # Get the class index
-    predicted_labels = label_encoder.inverse_transform(predicted_classes)  # Map to category names
-    
-    
-    # Remove all "Not Dark" from the predicted_labels and then count the rest as dark_pattern_score
-    
-    # dark_pattern_score = len([x for x in predicted_labels if x != 'Not Dark'])
+    # Get class probabilities
+    results = []
+    for probs in predictions:
+        # Get indices of patterns with confidence > 0.2 (adjust threshold if needed)
+        top_indices = np.where(probs > 0.2)[0]
+        classifications = [
+            {"pattern": label_encoder.inverse_transform([idx])[0], "confidence": float(probs[idx])}
+            for idx in top_indices
+        ]
+        
+        # If no strong predictions, classify as "Not Dark"
+        if not classifications:
+            classifications = [{"pattern": "Not Dark", "confidence": 1.0}]
+        
+        results.append(classifications)
 
-    response = {'result': predicted_labels.tolist()}  # Convert to JSON serializable format
+    response = {"result": results}
     print(response)
     return response

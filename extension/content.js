@@ -55,32 +55,53 @@ async function scrapeAndDetect() {
     }
 }
 
-function highlight(element, pattern) {
-    // Add a glowing red border
+function highlight(element, classifications) {
+    // Remove "Not Dark" entries and check if any patterns remain
+    classifications = classifications.filter(c => c.pattern !== "Not Dark");
+
+    if (classifications.length === 0) return; // Skip highlighting if only "Not Dark" was detected
+
+    // Add a glowing red border to the element
     element.style.outline = "3px solid red";
     element.style.boxShadow = "0 0 10px rgba(255, 0, 0, 0.8)";
     element.style.position = "relative";
 
-    // Create a label
-    let tag = document.createElement("div");
-    tag.style.backgroundColor = "rgba(255, 0, 0, 0.9)";
-    tag.style.color = "white";
-    tag.style.padding = "8px";
-    tag.style.marginTop = "8px";
-    tag.style.fontSize = "14px";
-    tag.style.fontWeight = "bold";
-    tag.style.borderRadius = "5px";
-    tag.style.display = "inline-block";
-    tag.style.position = "absolute";
-    tag.style.top = "10px";
-    tag.style.left = "-10px";
-    tag.style.zIndex = "9999";  // Ensures it appears on top
-    tag.innerText = `⚠️ ${pattern}`; // Adds a warning emoji to grab attention
-    tag.style.opacity = "0.5";
+    // Create a container for the labels
+    let container = document.createElement("div");
+    container.style.position = "absolute";
+    container.style.top = "10px";
+    container.style.left = "-10px";
+    container.style.zIndex = "9999";
+    container.style.fontWeight = "bold";
+    container.style.borderRadius = "5px";
+    container.style.padding = "5px";
+    container.style.display = "inline-block";
 
-    // Append the tag
-    element.appendChild(tag);
+    // Function to determine color based on confidence
+    function getColor(confidence) {
+        if (confidence <= 0.35) return "rgba(0, 200, 0, 0.9)"; // Green for low confidence
+        if (confidence <= 0.65) return "rgba(255, 165, 0, 0.9)"; // Orange for medium confidence
+        return "rgba(255, 0, 0, 0.9)"; // Red for high confidence
+    }
+
+    // Append labels for each detected pattern
+    classifications.forEach(({ pattern, confidence }) => {
+        let tag = document.createElement("div");
+        tag.style.backgroundColor = getColor(confidence);
+        tag.style.color = "white";
+        tag.style.padding = "6px";
+        tag.style.margin = "4px 0";
+        tag.style.fontSize = "14px";
+        tag.style.borderRadius = "3px";
+        tag.innerText = `⚠️ ${pattern} (${(confidence * 100).toFixed(1)}%)`;
+
+        container.appendChild(tag);
+    });
+
+    // Append the tag container to the element
+    element.appendChild(container);
 }
+
 
 
 // Run detection
